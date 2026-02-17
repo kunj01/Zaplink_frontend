@@ -11,10 +11,8 @@ permissions:
 
 jobs:
   calculate-points:
-    # Only run when PR is actually merged, not just closed
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-
     steps:
       - name: Calculate and Award Points
         uses: actions/github-script@v7
@@ -24,35 +22,35 @@ jobs:
             const pr = context.payload.pull_request;
             const body = pr.body || '';
             const prNumber = pr.number;
-            const prTitle = pr.title;
             const prUrl = pr.html_url;
             const author = pr.user.login;
             const repo = context.repo.repo;
 
-            // ── Extract team number ────────────────────────────────────────
             const teamMatch = body.match(/team\s*(\d+)/i);
             if (!teamMatch) {
+              const noTeamLines = [];
+              noTeamLines.push('## Points Not Awarded');
+              noTeamLines.push('');
+              noTeamLines.push('This PR was merged but no team number was found in the description.');
+              noTeamLines.push('');
+              noTeamLines.push('Please contact the organizers to have your points manually added:');
+              noTeamLines.push('- WhatsApp: +91-8347036131');
+              noTeamLines.push('- Email: jadejakrishnapal04@gmail.com');
+              noTeamLines.push('');
+              noTeamLines.push('> GDG CHARUSAT Open Source Contri Sprintathon');
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prNumber,
-                body: `## 🔴 Points Not Awarded
-
-This PR was merged but **no team number was found** in the description.
-
-Please contact the organizers to have your points manually added:
-- 📱 **WhatsApp:** +91-8347036131
-- 📧 **Email:** jadejakrishnapal04@gmail.com
-
-> 🚀 **GDG CHARUSAT Open Source Contri Sprintathon**`
+                body: noTeamLines.join('\n')
               });
               return;
             }
 
             const teamNumber = teamMatch[1].padStart(2, '0');
-            const teamLabel = `Team ${teamNumber}`;
+            const teamLabel = 'Team ' + teamNumber;
 
-            // ── Check for linked issue ─────────────────────────────────────
             const issueMatch = body.match(/(close[sd]?|fix(e[sd])?|resolve[sd]?)\s*#(\d+)/i);
             const hasLinkedIssue = Boolean(issueMatch);
 
@@ -60,10 +58,16 @@ Please contact the organizers to have your points manually added:
             let level = '';
             let pointSource = '';
 
-            // ── CASE A: Issue-linked PR → read points from issue label ─────
+            const getPointsFromPRLabels = (pr) => {
+              const prLabels = pr.labels.map(function(l) { return l.name.toLowerCase(); });
+              if (prLabels.indexOf('level-2') !== -1 || prLabels.indexOf('intermediate') !== -1) return 20;
+              if (prLabels.indexOf('level-1') !== -1 || prLabels.indexOf('beginner') !== -1 || prLabels.indexOf('good-first-issue') !== -1) return 5;
+              return 0;
+            };
+
             if (hasLinkedIssue) {
               const issueNumber = parseInt(issueMatch[3]);
-              pointSource = `Linked Issue #${issueNumber}`;
+              pointSource = 'Linked Issue #' + issueNumber;
 
               try {
                 const issue = await github.rest.issues.get({
@@ -72,204 +76,153 @@ Please contact the organizers to have your points manually added:
                   issue_number: issueNumber
                 });
 
-                const labels = issue.data.labels.map(l => l.name.toLowerCase());
-                console.log(`Issue #${issueNumber} labels: ${labels.join(', ')}`);
+                const labels = issue.data.labels.map(function(l) { return l.name.toLowerCase(); });
 
-                if (labels.includes('level-2') || labels.includes('intermediate')) {
+                if (labels.indexOf('level-2') !== -1 || labels.indexOf('intermediate') !== -1) {
                   points = 20;
-                  level = '🟡 Level 2 — Intermediate';
-                } else if (
-                  labels.includes('level-1') ||
-                  labels.includes('beginner') ||
-                  labels.includes('good-first-issue')
-                ) {
+                  level = 'Level 2 - Intermediate';
+                } else if (labels.indexOf('level-1') !== -1 || labels.indexOf('beginner') !== -1 || labels.indexOf('good-first-issue') !== -1) {
                   points = 5;
-                  level = '🟢 Level 1 — Beginner';
+                  level = 'Level 1 - Beginner';
                 } else {
-                  // Issue has no level label — fall back to PR labels
-                  points = await getPointsFromPRLabels(pr);
-                  level = points === 20
-                    ? '🟡 Level 2 — Intermediate (from PR label)'
-                    : '🟢 Level 1 — Beginner (from PR label)';
+                  points = getPointsFromPRLabels(pr);
+                  level = points === 20 ? 'Level 2 - Intermediate (from PR label)' : 'Level 1 - Beginner (from PR label)';
                 }
-
               } catch (e) {
-                console.log(`Could not fetch issue #${issueNumber}: ${e.message}`);
                 points = 5;
-                level = '🟢 Level 1 — Beginner (fallback)';
+                level = 'Level 1 - Beginner (fallback)';
               }
 
-            // ── CASE B: General improvement PR → read points from PR labels ─
             } else {
-              pointSource = 'General Improvement PR — level assigned by admin';
-              points = await getPointsFromPRLabels(pr);
+              pointSource = 'General Improvement PR - level assigned by admin';
+              points = getPointsFromPRLabels(pr);
 
               if (points === 0) {
-                // Admin forgot to assign a level label before merging
+                const noLevelLines = [];
+                noLevelLines.push('## Points Could Not Be Calculated');
+                noLevelLines.push('');
+                noLevelLines.push('This is a General Improvement PR but no level label (level-1 or level-2) was found on this PR.');
+                noLevelLines.push('');
+                noLevelLines.push('**Admin action required:**');
+                noLevelLines.push('Please manually add points for ' + teamLabel + ' in the leaderboard issue.');
+                noLevelLines.push('');
+                noLevelLines.push('- level-1 = 5 points');
+                noLevelLines.push('- level-2 = 20 points');
+                noLevelLines.push('');
+                noLevelLines.push('> GDG CHARUSAT Open Source Contri Sprintathon');
+
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  body: `## ⚠️ Points Could Not Be Calculated
-
-This is a **General Improvement PR** but no level label (\`level-1\` or \`level-2\`) was found on this PR.
-
-**Admin action required:**
-Please manually add points for **${teamLabel}** in the leaderboard issue.
-
-- \`level-1\` = **5 points**
-- \`level-2\` = **20 points**
-
-> 🚀 **GDG CHARUSAT Open Source Contri Sprintathon**`
+                  body: noLevelLines.join('\n')
                 });
                 return;
               }
 
-              level = points === 20
-                ? '🟡 Level 2 — Intermediate (admin assigned)'
-                : '🟢 Level 1 — Beginner (admin assigned)';
+              level = points === 20 ? 'Level 2 - Intermediate (admin assigned)' : 'Level 1 - Beginner (admin assigned)';
             }
 
-            // ── Post points comment on PR ──────────────────────────────────
+            const awardLines = [];
+            awardLines.push('## PR Merged - Points Awarded!');
+            awardLines.push('');
+            awardLines.push('Congratulations @' + author + '! Your contribution has been merged.');
+            awardLines.push('');
+            awardLines.push('| | |');
+            awardLines.push('|---|---|');
+            awardLines.push('| **Team** | ' + teamLabel + ' |');
+            awardLines.push('| **Level** | ' + level + ' |');
+            awardLines.push('| **Points Awarded** | ' + points + ' points |');
+            awardLines.push('| **Source** | ' + pointSource + ' |');
+            awardLines.push('');
+            awardLines.push('The leaderboard has been updated. Keep contributing!');
+            awardLines.push('');
+            awardLines.push('> GDG CHARUSAT Open Source Contri Sprintathon');
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `## 🎉 PR Merged — Points Awarded!
-
-Congratulations @${author}! Your contribution has been merged.
-
-| | |
-|---|---|
-| 👥 **Team** | ${teamLabel} |
-| 🏷️ **Level** | ${level} |
-| ⭐ **Points Awarded** | **${points} points** |
-| 📌 **Source** | ${pointSource} |
-
-The leaderboard has been updated. Keep contributing! 💪
-
-> 🚀 **GDG CHARUSAT Open Source Contri Sprintathon**`
+              body: awardLines.join('\n')
             });
 
-            // ── Update leaderboard pinned issue ────────────────────────────
-            await updateLeaderboard(teamLabel, points, repo);
+            // Update leaderboard
+            const lbIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'leaderboard',
+              per_page: 1
+            });
 
-            // ── Helper: Read level from PR's own labels ────────────────────
-            async function getPointsFromPRLabels(pr) {
-              const prLabels = pr.labels.map(l => l.name.toLowerCase());
-              console.log(`PR labels: ${prLabels.join(', ')}`);
+            const scores = {};
+            let lbIssueNumber = null;
 
-              if (prLabels.includes('level-2') || prLabels.includes('intermediate')) {
-                return 20;
-              } else if (
-                prLabels.includes('level-1') ||
-                prLabels.includes('beginner') ||
-                prLabels.includes('good-first-issue')
-              ) {
-                return 5;
-              }
-              return 0; // No level label found
-            }
-
-            // ── Helper: Update leaderboard issue ──────────────────────────
-            async function updateLeaderboard(team, pts, repoName) {
-              const issues = await github.rest.issues.listForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                labels: 'leaderboard',
-                per_page: 1
-              });
-
-              const scores = {};
-              let leaderboardIssueNumber = null;
-
-              if (issues.data.length > 0) {
-                const lb = issues.data[0];
-                leaderboardIssueNumber = lb.number;
-                Object.assign(scores, parseLeaderboard(lb.body || ''));
-              }
-
-              // Add points
-              if (!scores[team]) scores[team] = { points: 0, prs: 0 };
-              scores[team].points += pts;
-              scores[team].prs += 1;
-
-              const newBody = buildLeaderboardBody(scores, repoName);
-
-              if (leaderboardIssueNumber) {
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: leaderboardIssueNumber,
-                  body: newBody
-                });
-                console.log(`Leaderboard updated. ${team} now has ${scores[team].points} pts.`);
-              } else {
-                // Create leaderboard issue if it doesn't exist
-                await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: '🏆 Sprintathon Leaderboard',
-                  body: newBody,
-                  labels: ['leaderboard']
-                });
-                console.log('Leaderboard issue created.');
-              }
-            }
-
-            // ── Helper: Parse existing leaderboard table ───────────────────
-            function parseLeaderboard(body) {
-              const scores = {};
+            if (lbIssues.data.length > 0) {
+              const lb = lbIssues.data[0];
+              lbIssueNumber = lb.number;
               const rowRegex = /\|\s*(Team\s*\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/gi;
               let match;
-              while ((match = rowRegex.exec(body)) !== null) {
-                scores[match[1].trim()] = {
-                  points: parseInt(match[2]),
-                  prs: parseInt(match[3])
-                };
+              while ((match = rowRegex.exec(lb.body || '')) !== null) {
+                scores[match[1].trim()] = { points: parseInt(match[2]), prs: parseInt(match[3]) };
               }
-              return scores;
             }
 
-            // ── Helper: Build leaderboard markdown ────────────────────────
-            function buildLeaderboardBody(scores, repoName) {
-              const sorted = Object.entries(scores)
-                .sort((a, b) => b[1].points - a[1].points);
+            if (!scores[teamLabel]) scores[teamLabel] = { points: 0, prs: 0 };
+            scores[teamLabel].points += points;
+            scores[teamLabel].prs += 1;
 
-              const medals = ['🥇', '🥈', '🥉'];
-              const rows = sorted.map(([team, data], i) => {
-                const rank = medals[i] || `${i + 1}.`;
-                return `| ${rank} | ${team} | ${data.points} | ${data.prs} |`;
-              }).join('\n');
+            const sorted = Object.entries(scores).sort(function(a, b) { return b[1].points - a[1].points; });
+            const medals = ['1st', '2nd', '3rd'];
+            const rows = sorted.map(function(entry, i) {
+              const rank = i < 3 ? medals[i] : (i + 1) + '.';
+              return '| ' + rank + ' | ' + entry[0] + ' | ' + entry[1].points + ' | ' + entry[1].prs + ' |';
+            }).join('\n');
 
-              const now = new Date().toUTCString();
+            const now = new Date().toUTCString();
+            const lbBody = [
+              '# GDG CHARUSAT Open Source Contri Sprintathon - Leaderboard',
+              '',
+              '> **Repository:** ' + repo,
+              '> **Last Updated:** ' + now,
+              '',
+              '---',
+              '',
+              '## Scores',
+              '',
+              '| Rank | Team | Points | PRs Merged |',
+              '|------|------|--------|------------|',
+              rows || '| - | No contributions yet | 0 | 0 |',
+              '',
+              '---',
+              '',
+              '## Points System',
+              '',
+              '| Level | Label | Points |',
+              '|-------|-------|--------|',
+              '| Beginner | level-1 / good-first-issue | 5 pts |',
+              '| Intermediate | level-2 / intermediate | 20 pts |',
+              '| General Improvement | Admin assigns level on PR | 5 or 20 pts |',
+              '',
+              '---',
+              '',
+              '*This leaderboard updates automatically every time a PR is merged.*',
+              '*Maintained by GDG CHARUSAT*'
+            ].join('\n');
 
-              return `# 🏆 GDG CHARUSAT Open Source Contri Sprintathon — Leaderboard
-
-> **Repository:** \`${repoName}\`
-> **Last Updated:** ${now}
-
----
-
-## 📊 Scores
-
-| Rank | Team | ⭐ Points | ✅ PRs Merged |
-|------|------|-----------|--------------|
-${rows || '| — | No contributions yet | 0 | 0 |'}
-
----
-
-## 🎯 Points System
-
-| Level | Label | Points |
-|-------|-------|--------|
-| 🟢 Beginner | \`level-1\` / \`good-first-issue\` | 5 pts |
-| 🟡 Intermediate | \`level-2\` / \`intermediate\` | 20 pts |
-| 🔧 General Improvement | Admin assigns \`level-1\` or \`level-2\` on PR | 5 or 20 pts |
-
----
-
-*This leaderboard updates automatically every time a PR is merged. 🤖*
-*Maintained by GDG CHARUSAT 🚀*`;
+            if (lbIssueNumber) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: lbIssueNumber,
+                body: lbBody
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Sprintathon Leaderboard',
+                body: lbBody,
+                labels: ['leaderboard']
+              });
             }
