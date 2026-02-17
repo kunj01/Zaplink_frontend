@@ -19,7 +19,7 @@ name: PR Validator
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   pull_request_target:
-    types: [opened, edited, reopened]
+    types: [opened, edited, reopened, synchronize]
 
 # permissions block below is kept for documentation only.
 # With PAT_TOKEN the effective permissions come from the PAT itself,
@@ -68,6 +68,20 @@ jobs:
             await ensureLabel('needs-admin-review', 'f59e0b', 'General improvement PR - admin must assign level');
             await ensureLabel('level-1',            '22c55e', 'Beginner contribution (5 pts)');
             await ensureLabel('level-2',            'f97316', 'Intermediate contribution (20 pts)');
+
+            // ── Auto-assign reviewer ─────────────────────────────────────────
+            // Silently skips if already assigned or if author IS the reviewer.
+            try {
+              const REVIEWER = 'krishnapaljadeja';
+              if (author !== REVIEWER) {
+                await github.rest.pulls.requestReviewers({
+                  owner:       context.repo.owner,
+                  repo:        context.repo.repo,
+                  pull_number: prNumber,
+                  reviewers:   [REVIEWER]
+                });
+              }
+            } catch (_) { /* already assigned or user not found — ignore */ }
 
             // ── Clean slate: strip all status labels before re-evaluating ────
             // removeLabel throws 404 if the label isn't on the PR — catch it.
