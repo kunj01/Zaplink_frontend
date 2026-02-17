@@ -1,4 +1,4 @@
-# Zaplink Frontend - GDG CHARUSAT Open Source Contri Sprintathon
+# Zaplink Frontend - GDG CHARUSAT Open Source Contri Sprintathon-automated
 
 ## 🎯 About This Project
 
