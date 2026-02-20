@@ -336,14 +336,6 @@ git commit -m "fix: address review comments"
 git push origin feature/your-feature-name
 ```
 
-### General Improvement PRs (No Issue Linked)
-
-If you want to fix a bug or add a small improvement that isn't part of an existing issue, you may raise a PR directly **only if**:
-- It is a genuine improvement (not a trivial change)
-- Your **Team Number** is clearly stated in the PR description
-- You provide a clear explanation of what you changed and why
-- You understand it will be **reviewed strictly** and may be closed if not up to standard
-
 ## 🎨 Code Style Guidelines
 
 ### TypeScript
