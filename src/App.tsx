@@ -5,6 +5,7 @@ import Customize from "./components/Customize";
 import HowItWorks from "./components/HowItWorks";
 import AboutUs from "./components/AboutUs";
 import ViewZap from "./components/ViewZap";
+import Dashboard from "./components/Dashboard";
 // import UrlShortenerPage from "./components/UrlShortenerPage";
 import { Analytics } from "@vercel/analytics/react";
 import Navbar from "./components/Navbar";
@@ -67,6 +68,15 @@ export default function App() {
             <>
               <Navbar />
               <AboutUs />
+            </>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <>
+              <Navbar />
+              <Dashboard />
             </>
           }
         />
