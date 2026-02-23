@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import CopyButton from "./CopyButton";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -47,7 +48,12 @@ export default function CustomizePage() {
   const [frameStyle, setFrameStyle] = useState<FrameOption>("none");
   const [logo, setLogo] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [animateQR, setAnimateQR] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  ;
+
+  const [fgColor, setFgColor] = useState("#000000"); // ADD THIS
 
   const qrValue = state?.shortUrl || "https://zaplink.example.com/demo123";
 
@@ -57,6 +63,8 @@ export default function CustomizePage() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) setLogo(event.target.result as string);
+      setAnimateQR(true);
+      setTimeout(() => setAnimateQR(false), 400);
     };
     reader.readAsDataURL(file);
   };
@@ -168,11 +176,11 @@ export default function CustomizePage() {
         <div className="bg-card rounded-3xl shadow-lg p-6 sm:p-8 space-y-8 border border-border">
           {/* Step Indicator */}
           <div className="flex items-center justify-between mb-8">
-            <span className="text-xs sm:text-sm text-primary font-semibold bg-primary/10 px-3 py-1 rounded-full">
+            <span className="text-xs sm:text-sm text-primary font-semibold bg-primary/10 px-3 py-1 rounded-full animate-pulse">
               Step 3 of 3
             </span>
             <div className="flex-1 mx-4 h-2 bg-muted rounded-full overflow-hidden">
-              <div className="progress-bar h-full w-full"></div>
+              <div className="progress-bar h-full w-full bg-gradient-to-r from-primary via-primary/80 to-primary shadow-md transition-all duration-700"></div>
             </div>
             <span className="text-xs sm:text-sm text-primary font-semibold flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
@@ -187,14 +195,14 @@ export default function CustomizePage() {
               <div className="bg-gradient-to-br from-muted/30 to-muted/10 p-8 sm:p-12 rounded-3xl border border-border/50 shadow-xl backdrop-blur-sm">
                 <div
                   ref={qrRef}
-                  className="flex items-center justify-center transition-all duration-500 hover:scale-105"
-                  style={getFrameStyle()}
+                  className={`flex items-center justify-center transition-all duration-500 hover:scale-105 ${animateQR ? "scale-110 opacity-80" : "scale-100 opacity-100"
+                    }`} style={getFrameStyle()}
                 >
                   <QRCodeSVG
                     value={qrValue}
                     size={240}
                     bgColor="#fff"
-                    fgColor="#000"
+                    fgColor={fgColor}
                     level="H"
                     includeMargin
                     imageSettings={
@@ -232,9 +240,11 @@ export default function CustomizePage() {
                 </Label>
                 <Select
                   value={frameStyle}
-                  onValueChange={(value: string) =>
-                    setFrameStyle(value as FrameOption)
-                  }
+                  onValueChange={(value: string) => {
+                    setFrameStyle(value as FrameOption);
+                    setAnimateQR(true);
+                    setTimeout(() => setAnimateQR(false), 400);
+                  }}
                 >
                   <SelectTrigger
                     id="frame-style"
@@ -263,6 +273,24 @@ export default function CustomizePage() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Foreground Color Picker */}
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  QR Foreground Color
+                </Label>
+
+                <input
+                  type="color"
+                  value={fgColor}
+                  onChange={(e) => {
+                    setFgColor(e.target.value);
+                    setAnimateQR(true);
+                    setTimeout(() => setAnimateQR(false), 400);
+                  }} className="w-20 h-12 cursor-pointer rounded-md border border-border bg-background"
+                />
               </div>
 
               {/* Logo Upload */}
@@ -337,6 +365,15 @@ export default function CustomizePage() {
                     Actions
                   </h2>
                 </div>
+
+                {/* Inline Short URL display with Copy button */}
+                <div className="flex items-center gap-2 p-3 rounded-xl border border-border bg-muted/30">
+                  <span className="flex-1 truncate text-sm text-muted-foreground font-mono select-all" title={qrValue}>
+                    {qrValue}
+                  </span>
+                  <CopyButton text={qrValue} />
+                </div>
+
                 <div className="grid grid-cols-1 gap-4">
                   <Button
                     onClick={handleDownload}

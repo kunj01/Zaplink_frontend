@@ -105,12 +105,22 @@ export default function UploadPage() {
   const [passwordProtect, setPasswordProtect] = useState(false);
   const [password, setPassword] = useState("");
   const [selfDestruct, setSelfDestruct] = useState(false);
-  const [destructViews, setDestructViews] = useState(() =>
-    JSON.parse(sessionStorage.getItem("destructViews") || "false")
-  );
-  const [destructTime, setDestructTime] = useState(() =>
-    JSON.parse(sessionStorage.getItem("destructTime") || "false")
-  );
+  const [destructViews, setDestructViews] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("destructViews") || "false");
+    } catch (error) {
+      console.warn("Failed to parse destructViews from sessionStorage:", error);
+      return false;
+    }
+  });
+  const [destructTime, setDestructTime] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("destructTime") || "false");
+    } catch (error) {
+      console.warn("Failed to parse destructTime from sessionStorage:", error);
+      return false;
+    }
+  });
   const [viewsValue, setViewsValue] = useState(
     () => sessionStorage.getItem("viewsValue") || ""
   );
@@ -118,13 +128,20 @@ export default function UploadPage() {
     () => sessionStorage.getItem("timeValue") || ""
   );
   const [loading, setLoading] = useState(false);
+  const [currentStep] = useState(2);
   const [type, setType] = useState<FileType>(initialType);
   const [urlValue, setUrlValue] = useState("");
   const [textValue, setTextValue] = useState("");
   const [compressPdf, setCompressPdf] = useState(false);
   const [lastQR, setLastQR] = useState(() => {
-    const data = sessionStorage.getItem("lastQR");
-    return data ? JSON.parse(data) : null;
+    try {
+      const data = sessionStorage.getItem("lastQR");
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.warn("Failed to parse lastQR from sessionStorage:", error);
+      sessionStorage.removeItem("lastQR");
+      return null;
+    }
   });
   const [lastQRFormHash, setLastQRFormHash] = useState(() => {
     const data = sessionStorage.getItem("lastQRFormHash");
@@ -479,10 +496,24 @@ export default function UploadPage() {
   // Add file size constraints
   const MAX_SIZE_MB = type === "video" ? 100 : 10;
 
-  // Handle files from the FileUpload component
-  const handleFilesFromUploader = (files: File[]) => {
-    if (files.length > 0) {
-      const file = files[0]; // Use first file for backward compat
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_SIZE_BYTES) {
+      toast.error(
+        `${type.charAt(0).toUpperCase() + type.slice(1)
+        } files must be ≤${MAX_SIZE_MB}MB.`
+      );
+      e.target.value = "";
+      return;
+    }
+    if (type === "pdf" && compressPdf) {
+      // Placeholder: compress PDF client-side
+      // const compressed = await compressPDF(file, 10 * 1024 * 1024);
+      // setUploadedFile(compressed);
+      toast.info(
+        "PDF compression is not yet implemented. Uploading original file."
+      );
       setUploadedFile(file);
       if (!qrName) {
         setQrName(file.name);
@@ -539,14 +570,17 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
-        <div className="bg-card rounded-3xl shadow-lg p-6 sm:p-10 space-y-8 sm:space-y-12 border border-border">
+        <div className={`bg-card rounded-3xl shadow-lg p-6 sm:p-10 space-y-8 sm:space-y-12 border border-border transition-all duration-500 ease-out animate-fade-in`}>
           {/* Step Indicator */}
           <div className="flex items-center justify-between mb-8 sm:mb-12">
             <span className="text-xs sm:text-sm text-primary font-semibold bg-primary/10 px-4 py-2 rounded-full">
-              Step 2 of 3
+              Step {currentStep} of 3
             </span>
             <div className="flex-1 mx-4 sm:mx-6 h-2 bg-muted rounded-full overflow-hidden">
-              <div className="progress-bar h-full w-2/3"></div>
+              <div
+                className="progress-bar h-full transition-all duration-500 ease-in-out bg-gradient-to-r from-primary via-primary/80 to-primary shadow-md"
+                style={{ width: `${(currentStep / 3) * 100}%` }}
+              ></div>
             </div>
             <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
               Customize
