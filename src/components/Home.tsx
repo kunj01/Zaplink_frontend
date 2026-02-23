@@ -117,7 +117,7 @@ export default function Home() {
                 }
                 className="group content-type-card text-left focus-ring"
               >
-                <div className="relative z-10 flex flex-col items-center gap-4 sm:gap-6">
+                <div className="relative z-20 flex flex-col items-center gap-4 sm:gap-6">
                   <div
                     className={cn(
                       "p-4 sm:p-5 rounded-2xl bg-gradient-to-br transition-all duration-300 shadow-lg",
