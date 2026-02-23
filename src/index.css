@@ -315,6 +315,33 @@ body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
+/* Security cards */
+.security-card {
+  position: relative;
+}
+
+.security-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at top right,
+    hsl(var(--primary) / 0.04) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: 16px;
+}
+
+.security-card:hover::before {
+  opacity: 1;
+}
+
 /* Loading spinner */
 .loading-spinner {
   animation: spin 1s linear infinite;
