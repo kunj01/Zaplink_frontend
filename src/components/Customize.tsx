@@ -51,8 +51,6 @@ export default function CustomizePage() {
   const [animateQR, setAnimateQR] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  ;
-
   const [fgColor, setFgColor] = useState("#000000"); // ADD THIS
 
   const qrValue = state?.shortUrl || "https://zaplink.example.com/demo123";
@@ -195,8 +193,10 @@ export default function CustomizePage() {
               <div className="bg-gradient-to-br from-muted/30 to-muted/10 p-8 sm:p-12 rounded-3xl border border-border/50 shadow-xl backdrop-blur-sm">
                 <div
                   ref={qrRef}
-                  className={`flex items-center justify-center transition-all duration-500 hover:scale-105 ${animateQR ? "scale-110 opacity-80" : "scale-100 opacity-100"
-                    }`} style={getFrameStyle()}
+                  className={`flex items-center justify-center transition-all duration-500 hover:scale-105 ${
+                    animateQR ? "scale-110 opacity-80" : "scale-100 opacity-100"
+                  }`}
+                  style={getFrameStyle()}
                 >
                   <QRCodeSVG
                     value={qrValue}
@@ -289,7 +289,8 @@ export default function CustomizePage() {
                     setFgColor(e.target.value);
                     setAnimateQR(true);
                     setTimeout(() => setAnimateQR(false), 400);
-                  }} className="w-20 h-12 cursor-pointer rounded-md border border-border bg-background"
+                  }}
+                  className="w-20 h-12 cursor-pointer rounded-md border border-border bg-background"
                 />
               </div>
 
@@ -331,11 +332,13 @@ export default function CustomizePage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setLogo(null);
+                          toast.info("Logo removed"); // Feedback for logo removal
                         }}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg focus-ring"
                       >
                         <X className="h-4 w-4" />
-                      </Button>
+                      </Button>{" "}
+                      {/* Ensure this closing tag is present */}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center space-y-3">
@@ -361,14 +364,15 @@ export default function CustomizePage() {
                   <div className="p-2 bg-green-500/10 rounded-lg">
                     <Sparkles className="h-5 w-5 text-green-500" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground">
-                    Actions
-                  </h2>
+                  <h2 className="text-xl font-bold text-foreground">Actions</h2>
                 </div>
 
                 {/* Inline Short URL display with Copy button */}
                 <div className="flex items-center gap-2 p-3 rounded-xl border border-border bg-muted/30">
-                  <span className="flex-1 truncate text-sm text-muted-foreground font-mono select-all" title={qrValue}>
+                  <span
+                    className="flex-1 truncate text-sm text-muted-foreground font-mono select-all"
+                    title={qrValue}
+                  >
                     {qrValue}
                   </span>
                   <CopyButton text={qrValue} />
