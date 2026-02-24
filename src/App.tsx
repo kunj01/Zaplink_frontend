@@ -8,7 +8,7 @@ import ViewZap from "./components/ViewZap";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
-// import UrlShortenerPage from "./components/UrlShortenerPage";
+import UrlShortenerPage from "./components/UrlShortenerPage";
 import { Analytics } from "@vercel/analytics/react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -82,7 +82,16 @@ export default function App() {
           }
         />
         <Route path="/zaps/:shortId" element={<ViewZapWrapper />} />
-        {/* // <Route path="/url-shortener" element={<UrlShortenerPage />} /> */}
+        <Route
+          path="/url-shortener"
+          element={
+            <>
+              <Navbar />
+              <UrlShortenerPage />
+              <Footer />
+            </>
+          }
+        />
         <Route
           path="/privacy"
           element={
