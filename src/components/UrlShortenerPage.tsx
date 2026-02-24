@@ -23,8 +23,11 @@ export default function UrlShortenerPage() {
     }
     setLoading(true);
     try {
+      const apiUrl = import.meta.env.VITE_BACKEND_URL
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/url-shortener`
+        : '/api/url-shortener';
       const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/url-shortener`,
+        apiUrl,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

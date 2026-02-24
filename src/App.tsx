@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./components/Home";
 import UploadPage from "./components/UploadPage";
@@ -8,6 +9,7 @@ import ViewZap from "./components/ViewZap";
 // import UrlShortenerPage from "./components/UrlShortenerPage";
 import { Analytics } from "@vercel/analytics/react";
 import Navbar from "./components/Navbar";
+import { validateEnvironment } from "./lib/environment";
 
 // Wrapper for ViewZap to show logo-only navbar if password is required
 function ViewZapWrapper() {
@@ -22,6 +24,11 @@ function ViewZapWrapper() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Validate environment configuration on app startup
+    validateEnvironment();
+  }, []);
+
   return (
     <>
       <Routes>

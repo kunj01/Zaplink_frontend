@@ -71,9 +71,10 @@ export default function ViewZap() {
       setPasswordRequired(false);
       setPasswordError(null);
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`
-        );
+        const apiUrl = import.meta.env.VITE_BACKEND_URL
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`
+          : `/api/zaps/${shortId}`;
+        const response = await axios.get(apiUrl);
         // If successful, the backend will redirect or serve the file.
         if (response.data) {
           window.location.href = response.data.url;
@@ -136,8 +137,11 @@ export default function ViewZap() {
     setVerifying(true);
     setPasswordError(null);
     try {
+      const apiUrl = import.meta.env.VITE_BACKEND_URL
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`
+        : `/api/zaps/${shortId}`;
       const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`,
+        apiUrl,
         {
           params: { password },
           headers: {
