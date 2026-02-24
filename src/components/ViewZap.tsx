@@ -151,6 +151,15 @@ export default function ViewZap() {
       if (response.data) {
         const { type, url, content, data, name } = response.data;
 
+        // Escape HTML entities for security
+        const escapeHtml = (unsafe: string) =>
+          unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
         if (
           type === "redirect" ||
           type === "file" ||
@@ -161,14 +170,6 @@ export default function ViewZap() {
           // Redirect to the URL
           window.location.href = url;
         } else if (type === "text" || type === "document") {
-          // Escape HTML entities for security
-          const escapeHtml = (unsafe: string) =>
-            unsafe
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;")
-              .replace(/'/g, "&#039;");
           const escapedContent = escapeHtml(content);
           const escapedName = escapeHtml(name || "Untitled");
           // Use the backend's dark theme template
@@ -250,17 +251,23 @@ export default function ViewZap() {
             newWindow.document.close();
           }
         } else if (type === "image") {
-          // Display image
+          // Display image with sanitized values
+          const escapedImageName = escapeHtml(name || "Image");
+          // Validate data URL to prevent javascript: or other dangerous protocols
+          const isSafeUrl =
+            typeof data === "string" &&
+            (data.startsWith("data:") || data.startsWith("https://"));
+          const safeData = isSafeUrl ? data : "";
           const newWindow = window.open("", "_blank");
           if (newWindow) {
             newWindow.document.write(`
               <!DOCTYPE html>
               <html>
               <head>
-                <title>${name || "Image"}</title>
+                <title>${escapedImageName}</title>
               </head>
               <body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-                <img src="${data}" alt="${name || "Image"}" style="max-width: 100%; max-height: 100vh;">
+                <img src="${safeData}" alt="${escapedImageName}" style="max-width: 100%; max-height: 100vh;">
               </body>
               </html>
             `);
