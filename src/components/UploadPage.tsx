@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Loader2, Shield, Clock, Eye, Zap, FileText, Link, Type as TypeIcon, X } from "lucide-react";
 import {
   Loader2,
   Shield,
@@ -737,13 +738,24 @@ export default function UploadPage() {
               <div className="w-3 h-3 bg-primary rounded-full"></div>
               Name your QR Code
             </Label>
-            <Input
-              id="qr-name"
-              placeholder="Enter a memorable name..."
-              value={qrName}
-              onChange={handleQrNameChange}
-              className="input-focus text-base rounded-xl border-border bg-background h-14 px-6 font-medium text-lg focus-ring"
-            />
+            <div className="relative">
+              <Input
+                id="qr-name"
+                placeholder="Enter a memorable name..."
+                value={qrName}
+                onChange={handleQrNameChange}
+                className="input-focus text-base rounded-xl border-border bg-background h-14 px-6 pr-12 font-medium text-lg focus-ring"
+              />
+              {qrName && (
+                <button
+                  onClick={() => setQrName("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground focus-ring"
+                  aria-label="Clear name"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Content Input */}
@@ -757,14 +769,25 @@ export default function UploadPage() {
                 <Link className="h-5 w-5 text-blue-500" />
                 Enter URL
               </Label>
-              <Input
-                id="url"
-                type="url"
-                value={urlValue}
-                onChange={(e) => setUrlValue(e.target.value)}
-                placeholder="https://example.com"
-                className="input-focus text-base rounded-xl border-border bg-background h-14 px-6 text-lg focus-ring"
-              />
+              <div className="relative">
+                <Input
+                  id="url"
+                  type="url"
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  placeholder="https://example.com"
+                  className="input-focus text-base rounded-xl border-border bg-background h-14 px-6 pr-12 text-lg focus-ring"
+                />
+                {urlValue && (
+                  <button
+                    onClick={() => setUrlValue("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground focus-ring"
+                    aria-label="Clear URL"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground pl-6">
                 {TYPE_MESSAGES[type]}
               </p>
@@ -779,15 +802,26 @@ export default function UploadPage() {
                 <TypeIcon className="h-5 w-5 text-yellow-500" />
                 Enter Text
               </Label>
-              <textarea
-                id="text"
-                value={textValue}
-                onChange={(e) => setTextValue(e.target.value)}
-                placeholder="Enter your text content here..."
-                className="w-full min-h-[140px] p-6 text-base rounded-xl border border-border bg-background text-foreground resize-vertical transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 focus-ring"
-                rows={6}
-                maxLength={10000}
-              />
+              <div className="relative">
+                <textarea
+                  id="text"
+                  value={textValue}
+                  onChange={(e) => setTextValue(e.target.value)}
+                  placeholder="Enter your text content here..."
+                  className="w-full min-h-[140px] p-6 pr-12 text-base rounded-xl border border-border bg-background text-foreground resize-vertical transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/10 focus-ring"
+                  rows={6}
+                  maxLength={10000}
+                />
+                {textValue && (
+                  <button
+                    onClick={() => setTextValue("")}
+                    className="absolute right-4 top-6 p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground focus-ring"
+                    aria-label="Clear text"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
               <div className="flex justify-between items-center px-2">
                 <p className="text-sm text-muted-foreground">
                   {TYPE_MESSAGES[type]}

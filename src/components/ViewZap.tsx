@@ -5,8 +5,12 @@ import { toast } from "sonner";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Shield, AlertTriangle, Home, Lock, Loader2 } from "lucide-react";
+<<<<<<< feature/quiz_access
 import AccessQuiz from "./AccessQuiz";
 import DelayedAccess from "./DelayedAccess";
+=======
+import { MockZapView } from "./MockZapView";
+>>>>>>> main
 
 function getErrorMessage(errorParam: string | null) {
   if (!errorParam) return null;
@@ -420,6 +424,7 @@ export default function ViewZap() {
     );
   }
 
+<<<<<<< feature/quiz_access
   // ── Show Quiz Component 
   if (quizRequired && quizQuestion) {
     return (
@@ -436,6 +441,11 @@ export default function ViewZap() {
     return (
       <DelayedAccess unlockTime={unlockTime} onUnlocked={handleFileUnlocked} />
     );
+=======
+  // Show mock view for demo items
+  if (shortId?.startsWith("mock")) {
+    return <MockZapView shortId={shortId} />;
+>>>>>>> main
   }
 
   if (passwordRequired) {
