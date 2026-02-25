@@ -158,6 +158,18 @@ export default function UploadPage() {
     return data || null;
   });
 
+  // Access Quiz States
+  const [enableAccessQuiz, setEnableAccessQuiz] = useState(false);
+  const [quizQuestion, setQuizQuestion] = useState("");
+  const [quizAnswer, setQuizAnswer] = useState("");
+
+  // Delayed File Access States
+  const [enableDelayedAccess, setEnableDelayedAccess] = useState(false);
+  const [delayedAccessType, setDelayedAccessType] = useState<
+    "minutes" | "hours" | "days"
+  >("hours");
+  const [delayedAccessValue, setDelayedAccessValue] = useState("");
+
   // Persist state to sessionStorage
   useEffect(() => {
     sessionStorage.setItem("qrName", qrName);
@@ -194,6 +206,40 @@ export default function UploadPage() {
   useEffect(() => {
     sessionStorage.setItem("timeValue", timeValue);
   }, [timeValue]);
+
+  useEffect(() => {
+    sessionStorage.setItem("enableAccessQuiz", JSON.stringify(enableAccessQuiz));
+    if (!enableAccessQuiz) {
+      setQuizQuestion("");
+      setQuizAnswer("");
+    }
+  }, [enableAccessQuiz]);
+
+  useEffect(() => {
+    sessionStorage.setItem("quizQuestion", quizQuestion);
+  }, [quizQuestion]);
+
+  useEffect(() => {
+    sessionStorage.setItem("quizAnswer", quizAnswer);
+  }, [quizAnswer]);
+
+  useEffect(() => {
+    sessionStorage.setItem(
+      "enableDelayedAccess",
+      JSON.stringify(enableDelayedAccess)
+    );
+    if (!enableDelayedAccess) {
+      setDelayedAccessValue("");
+    }
+  }, [enableDelayedAccess]);
+
+  useEffect(() => {
+    sessionStorage.setItem("delayedAccessType", delayedAccessType);
+  }, [delayedAccessType]);
+
+  useEffect(() => {
+    sessionStorage.setItem("delayedAccessValue", delayedAccessValue);
+  }, [delayedAccessValue]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -245,6 +291,27 @@ export default function UploadPage() {
           );
           formData.append("expiresAt", expirationTime.toISOString());
         }
+      }
+      // ── Add Access Quiz ───────────────────────────────────────────────────
+      if (enableAccessQuiz && quizQuestion.trim() && quizAnswer.trim()) {
+        formData.append("quizQuestion", quizQuestion);
+        formData.append("quizAnswer", quizAnswer);
+      }
+      // ── Add Delayed File Access ──────────────────────────────────────────
+      if (
+        enableDelayedAccess &&
+        delayedAccessValue.trim() &&
+        !isNaN(Number(delayedAccessValue))
+      ) {
+        let delaySeconds = parseInt(delayedAccessValue);
+        if (delayedAccessType === "hours") {
+          delaySeconds *= 60 * 60;
+        } else if (delayedAccessType === "days") {
+          delaySeconds *= 24 * 60 * 60;
+        } else if (delayedAccessType === "minutes") {
+          delaySeconds *= 60;
+        }
+        formData.append("delayedAccessTime", String(delaySeconds));
       }
 
       try {
@@ -324,6 +391,27 @@ export default function UploadPage() {
           formData.append("expiresAt", expirationTime.toISOString());
         }
       }
+      // ── Add Access Quiz ───────────────────────────────────────────────────
+      if (enableAccessQuiz && quizQuestion.trim() && quizAnswer.trim()) {
+        formData.append("quizQuestion", quizQuestion);
+        formData.append("quizAnswer", quizAnswer);
+      }
+      // ── Add Delayed File Access ──────────────────────────────────────────
+      if (
+        enableDelayedAccess &&
+        delayedAccessValue.trim() &&
+        !isNaN(Number(delayedAccessValue))
+      ) {
+        let delaySeconds = parseInt(delayedAccessValue);
+        if (delayedAccessType === "hours") {
+          delaySeconds *= 60 * 60;
+        } else if (delayedAccessType === "days") {
+          delaySeconds *= 24 * 60 * 60;
+        } else if (delayedAccessType === "minutes") {
+          delaySeconds *= 60;
+        }
+        formData.append("delayedAccessTime", String(delaySeconds));
+      }
 
       try {
         setLoading(true);
@@ -396,6 +484,27 @@ export default function UploadPage() {
         );
         formData.append("expiresAt", expirationTime.toISOString());
       }
+    }
+    // ── Add Access Quiz ───────────────────────────────────────────────────
+    if (enableAccessQuiz && quizQuestion.trim() && quizAnswer.trim()) {
+      formData.append("quizQuestion", quizQuestion);
+      formData.append("quizAnswer", quizAnswer);
+    }
+    // ── Add Delayed File Access ──────────────────────────────────────────
+    if (
+      enableDelayedAccess &&
+      delayedAccessValue.trim() &&
+      !isNaN(Number(delayedAccessValue))
+    ) {
+      let delaySeconds = parseInt(delayedAccessValue);
+      if (delayedAccessType === "hours") {
+        delaySeconds *= 60 * 60;
+      } else if (delayedAccessType === "days") {
+        delaySeconds *= 24 * 60 * 60;
+      } else if (delayedAccessType === "minutes") {
+        delaySeconds *= 60;
+      }
+      formData.append("delayedAccessTime", String(delaySeconds));
     }
 
     try {
@@ -884,7 +993,151 @@ export default function UploadPage() {
             </div>
           </div>
 
-          {/* Generate Button */}
+          {/* Access Quiz */}
+          <div className="space-y-8 border-t border-border pt-8">
+            <h3 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Shield className="h-6 w-6 text-blue-500" />
+              Access Quiz (Optional)
+            </h3>
+
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4 p-6 rounded-xl bg-muted/30 border border-border hover:border-blue-500/30 transition-all duration-200">
+                <Checkbox
+                  id="enable-quiz"
+                  checked={enableAccessQuiz}
+                  onCheckedChange={(checked) =>
+                    setEnableAccessQuiz(checked === true)
+                  }
+                  className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 w-5 h-5"
+                />
+                <Label
+                  htmlFor="enable-quiz"
+                  className="text-base font-medium text-foreground cursor-pointer flex items-center gap-3"
+                >
+                  <Shield className="h-5 w-5 text-blue-500" />
+                  Protect with Quiz
+                </Label>
+              </div>
+
+              {enableAccessQuiz && (
+                <div className="pl-10 space-y-4">
+                  <div>
+                    <Label
+                      htmlFor="quiz-question"
+                      className="text-base font-medium text-foreground block mb-2"
+                    >
+                      Quiz Question
+                    </Label>
+                    <Input
+                      id="quiz-question"
+                      placeholder="e.g., What is the capital of France?"
+                      value={quizQuestion}
+                      onChange={(e) => setQuizQuestion(e.target.value)}
+                      className="input-focus rounded-xl border-border bg-background h-12 focus-ring"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="quiz-answer"
+                      className="text-base font-medium text-foreground block mb-2"
+                    >
+                      Answer (Case-Insensitive)
+                    </Label>
+                    <Input
+                      id="quiz-answer"
+                      type="password"
+                      placeholder="e.g., Paris"
+                      value={quizAnswer}
+                      onChange={(e) => setQuizAnswer(e.target.value)}
+                      className="input-focus rounded-xl border-border bg-background h-12 focus-ring"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground italic">
+                    Users must answer correctly to access the file. Answers are
+                    case-insensitive.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Delayed File Access */}
+          <div className="space-y-8 border-t border-border pt-8">
+            <h3 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Clock className="h-6 w-6 text-green-500" />
+              Delayed File Access (Optional)
+            </h3>
+
+            <div className="space-y-6">
+              <div className="flex items-center space-x-4 p-6 rounded-xl bg-muted/30 border border-border hover:border-green-500/30 transition-all duration-200">
+                <Checkbox
+                  id="enable-delayed-access"
+                  checked={enableDelayedAccess}
+                  onCheckedChange={(checked) =>
+                    setEnableDelayedAccess(checked === true)
+                  }
+                  className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500 w-5 h-5"
+                />
+                <Label
+                  htmlFor="enable-delayed-access"
+                  className="text-base font-medium text-foreground cursor-pointer flex items-center gap-3"
+                >
+                  <Clock className="h-5 w-5 text-green-500" />
+                  Schedule Access
+                </Label>
+              </div>
+
+              {enableDelayedAccess && (
+                <div className="pl-10 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label
+                        htmlFor="delayed-value"
+                        className="text-base font-medium text-foreground block mb-2"
+                      >
+                        Unlock After
+                      </Label>
+                      <Input
+                        id="delayed-value"
+                        type="number"
+                        placeholder="e.g., 24"
+                        value={delayedAccessValue}
+                        onChange={(e) => setDelayedAccessValue(e.target.value)}
+                        min="1"
+                        className="input-focus rounded-xl border-border bg-background h-12 focus-ring"
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="delayed-type"
+                        className="text-base font-medium text-foreground block mb-2"
+                      >
+                        Time Unit
+                      </Label>
+                      <select
+                        id="delayed-type"
+                        value={delayedAccessType}
+                        onChange={(e) =>
+                          setDelayedAccessType(
+                            e.target.value as "minutes" | "hours" | "days"
+                          )
+                        }
+                        className="w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground text-base focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                      >
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground italic">
+                    File will be inaccessible until the specified time. QR code
+                    remains valid but locked.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
           <div className="pt-8">
             <Button
               onClick={handleGenerateAndContinue}
