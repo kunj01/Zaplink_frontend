@@ -138,7 +138,6 @@ export default function UploadPage() {
     () => sessionStorage.getItem("timeValue") || "",
   );
   const [loading, setLoading] = useState(false);
-  const [currentStep] = useState(2);
   const [type, setType] = useState<FileType>(initialType);
   const [urlValue, setUrlValue] = useState("");
   const [textValue, setTextValue] = useState("");
@@ -677,17 +676,57 @@ export default function UploadPage() {
     setQrName(value);
   };
 
-  const canGenerate =
-    qrName.trim() &&
-    (type === "url"
-      ? urlValue.trim()
-      : type === "text"
-        ? textValue.trim()
-        : uploadedFile) &&
+  // Step calculation logic
+  const hasContent =
+    (type === "url" && urlValue.trim()) ||
+    (type === "text" && textValue.trim()) ||
+    (type !== "url" && type !== "text" && uploadedFile);
+
+  const hasValidName = qrName.trim().length > 0;
+
+  const hasValidSecurity =
     (!passwordProtect || password.trim()) &&
     (!selfDestruct ||
       (destructViews && viewsValue.trim()) ||
       (destructTime && timeValue.trim()));
+
+  const canGenerate = hasContent && hasValidName && hasValidSecurity;
+
+  // Calculate current step dynamically
+  const currentStep = !hasContent ? 1 : !hasValidName ? 2 : canGenerate ? 3 : 2;
+
+  // Track step completion for animations
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [stepJustCompleted, setStepJustCompleted] = useState<number | null>(null);
+
+  // Update completed steps when progress is made
+  useEffect(() => {
+    const newCompletedSteps: number[] = [];
+    if (hasContent) newCompletedSteps.push(1);
+    if (hasValidName) newCompletedSteps.push(2);
+    if (canGenerate) newCompletedSteps.push(3);
+
+    // Check for newly completed step
+    const justCompleted = newCompletedSteps.find(
+      (step) => !completedSteps.includes(step)
+    );
+
+    if (justCompleted) {
+      setStepJustCompleted(justCompleted);
+      toast.success(
+        justCompleted === 1
+          ? "✓ Content added!"
+          : justCompleted === 2
+          ? "✓ Name provided!"
+          : "✓ Ready to generate!",
+        { duration: 2000 }
+      );
+      setTimeout(() => setStepJustCompleted(null), 2000);
+    }
+
+    setCompletedSteps(newCompletedSteps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasContent, hasValidName, canGenerate]);
 
   // Add this useEffect after state declarations
   useEffect(() => {
@@ -715,31 +754,142 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-4xl">
-        <div
-          className={`bg-card rounded-3xl shadow-lg p-6 sm:p-10 space-y-8 sm:space-y-12 border border-border transition-all duration-500 ease-out animate-fade-in`}
-        >
-          {/* Step Indicator */}
-          <div className="flex items-center justify-between mb-8 sm:mb-12">
-            <span className="text-xs sm:text-sm text-primary font-semibold bg-primary/10 px-4 py-2 rounded-full">
-              Step {currentStep} of 3
-            </span>
-            <div className="flex-1 mx-4 sm:mx-6 h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className="progress-bar h-full transition-all duration-500 ease-in-out bg-gradient-to-r from-primary via-primary/80 to-primary shadow-md"
-                style={{ width: `${(currentStep / 3) * 100}%` }}
-              ></div>
+        <div className={`bg-card rounded-3xl shadow-lg p-6 sm:p-10 space-y-8 sm:space-y-12 border border-border transition-all duration-500 ease-out animate-fade-in`}>
+          {/* Enhanced Step Indicator with Visual Feedback */}
+          <div className="space-y-6">
+            {/* Current Step Badge with Animation */}
+            <div className="flex items-center justify-between">
+              <span
+                className="text-xs sm:text-sm text-primary font-semibold bg-primary/10 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105"
+                style={{
+                  animation: stepJustCompleted
+                    ? "pulse 0.5s ease-in-out"
+                    : "none",
+                }}
+              >
+                Step {currentStep} of 3
+              </span>
+              <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
+                {currentStep === 3 ? "Ready!" : "Customize"}
+                <Zap
+                  className={`h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 ${
+                    currentStep === 3 ? "text-primary animate-pulse" : ""
+                  }`}
+                />
+              </span>
             </div>
-            <span className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
-              Customize
-              <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
-            </span>
+
+            {/* Visual Step Indicators */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              {[1, 2, 3].map((step) => {
+                const isCompleted = completedSteps.includes(step);
+                const isActive = currentStep === step;
+                const stepLabels = [
+                  "Add Content",
+                  "Configure",
+                  "Generate",
+                ];
+
+                return (
+                  <div key={step} className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 flex flex-col gap-2">
+                      {/* Step Circle */}
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm transition-all duration-500 transform ${
+                            isCompleted
+                              ? "bg-primary text-primary-foreground scale-110 shadow-lg"
+                              : isActive
+                              ? "bg-primary/30 text-primary scale-105 ring-2 ring-primary ring-offset-2 ring-offset-background"
+                              : "bg-muted text-muted-foreground"
+                          } ${
+                            stepJustCompleted === step
+                              ? "animate-bounce"
+                              : ""
+                          }`}
+                          style={{
+                            animation:
+                              stepJustCompleted === step
+                                ? "bounce 0.5s ease-in-out"
+                                : "none",
+                          }}
+                        >
+                          {isCompleted ? (
+                            <span className="text-lg">✓</span>
+                          ) : (
+                            step
+                          )}
+                        </div>
+                        {/* Step Label - Hidden on mobile for space */}
+                        <span
+                          className={`hidden sm:block text-xs font-medium transition-all duration-300 ${
+                            isCompleted || isActive
+                              ? "text-foreground"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {stepLabels[step - 1]}
+                        </span>
+                      </div>
+                      {/* Progress Bar */}
+                      {step < 3 && (
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-700 ease-out ${
+                              isCompleted
+                                ? "bg-gradient-to-r from-primary via-primary/90 to-primary shadow-sm"
+                                : "bg-transparent"
+                            }`}
+                            style={{
+                              width: isCompleted ? "100%" : "0%",
+                            }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Mobile Step Labels */}
+            <div className="flex sm:hidden items-center justify-between px-2 text-xs text-muted-foreground">
+              <span
+                className={currentStep >= 1 ? "text-foreground font-medium" : ""}
+              >
+                Content
+              </span>
+              <span
+                className={currentStep >= 2 ? "text-foreground font-medium" : ""}
+              >
+                Configure
+              </span>
+              <span
+                className={currentStep >= 3 ? "text-foreground font-medium" : ""}
+              >
+                Generate
+              </span>
+            </div>
           </div>
 
-          {/* QR Code Name */}
-          <div className="space-y-4">
+          {/* QR Code Name with Animation */}
+          <div
+            className="space-y-4 transition-all duration-500 transform"
+            style={{
+              opacity: currentStep >= 2 ? 1 : 0.6,
+              transform: currentStep >= 2 ? "scale(1)" : "scale(0.98)",
+            }}
+          >
             <Label className="text-lg font-semibold text-foreground flex items-center gap-3">
-              <div className="w-3 h-3 bg-primary rounded-full"></div>
+              <div
+                className={`w-3 h-3 rounded-full transition-all duration-500 ${
+                  completedSteps.includes(2) ? "bg-primary shadow-lg" : "bg-primary/50"
+                }`}
+              ></div>
               Name your QR Code
+              {completedSteps.includes(2) && (
+                <span className="text-xs text-primary animate-fade-in">✓</span>
+              )}
             </Label>
             <div className="relative">
               <Input
@@ -761,9 +911,15 @@ export default function UploadPage() {
             </div>
           </div>
 
-          {/* Content Input */}
+          {/* Content Input with Animation */}
           {type === "url" ? (
-            <div className="space-y-4">
+            <div
+              className="space-y-4 transition-all duration-500 transform"
+              style={{
+                opacity: currentStep >= 1 ? 1 : 0.8,
+                transform: currentStep >= 1 ? "translateY(0)" : "translateY(-10px)",
+              }}
+            >
               <Label
                 htmlFor="url"
                 className="text-lg font-semibold text-foreground flex items-center gap-3"
@@ -796,7 +952,13 @@ export default function UploadPage() {
               </p>
             </div>
           ) : type === "text" ? (
-            <div className="space-y-4">
+            <div
+              className="space-y-4 transition-all duration-500 transform"
+              style={{
+                opacity: currentStep >= 1 ? 1 : 0.8,
+                transform: currentStep >= 1 ? "translateY(0)" : "translateY(-10px)",
+              }}
+            >
               <Label
                 htmlFor="text"
                 className="text-lg font-semibold text-foreground flex items-center gap-3"
@@ -835,7 +997,13 @@ export default function UploadPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div
+              className="space-y-6 transition-all duration-500 transform"
+              style={{
+                opacity: currentStep >= 1 ? 1 : 0.8,
+                transform: currentStep >= 1 ? "translateY(0)" : "translateY(-10px)",
+              }}
+            >
               <div className="space-y-4">
                 <Label className="text-lg font-semibold text-foreground flex items-center gap-3">
                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
@@ -878,8 +1046,15 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Security Options */}
-          <div className="space-y-8">
+          {/* Security Options with Animation */}
+          <div
+            className="space-y-8 transition-all duration-500 transform"
+            style={{
+              opacity: currentStep >= 2 ? 1 : 0.5,
+              transform: currentStep >= 2 ? "translateY(0)" : "translateY(10px)",
+              pointerEvents: currentStep >= 2 ? "auto" : "none",
+            }}
+          >
             <h3 className="text-2xl font-bold text-foreground flex items-center gap-3">
               <Shield className="h-6 w-6 text-primary" />
               Security Options
@@ -1145,20 +1320,40 @@ export default function UploadPage() {
             <Button
               onClick={handleGenerateAndContinue}
               disabled={!canGenerate || loading}
-              className="w-full h-16 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-semibold text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus-ring"
+              className={`w-full h-16 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground font-semibold text-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus-ring ${
+                canGenerate && !loading
+                  ? "animate-pulse-subtle ring-2 ring-primary/30"
+                  : ""
+              }`}
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-3 h-6 w-6 animate-spin" />
                   Generating QR Code...
                 </>
+              ) : canGenerate ? (
+                <>
+                  <Zap className="mr-3 h-6 w-6 animate-pulse" />
+                  Generate QR Code 🚀
+                </>
               ) : (
                 <>
                   <Zap className="mr-3 h-6 w-6" />
-                  Generate QR Code
+                  Complete Steps to Generate
                 </>
               )}
             </Button>
+
+            {/* Progress Hint */}
+            {!canGenerate && (
+              <p className="text-center text-sm text-muted-foreground mt-4 animate-fade-in">
+                {!hasContent
+                  ? "📁 Please add content to continue"
+                  : !hasValidName
+                  ? "✏️ Please name your QR code"
+                  : "⚙️ Configure security settings if needed"}
+              </p>
+            )}
           </div>
 
           {/* Continue to QR Button */}
