@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import CopyButton from "./CopyButton";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Upload,
@@ -11,7 +11,13 @@ import {
   Palette,
   Sparkles,
   Check,
+  Trash2,
+  Shield,
+  AlertTriangle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import DeleteZapModal from "./DeleteZapModal";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "./ui/button";
 import {
@@ -38,22 +44,25 @@ type CustomizePageState = {
   qrCode: string;
   type: string;
   name: string;
+  deletionToken?: string;
 };
 
 export default function CustomizePage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const state = (location.state as CustomizePageState) || null;
   const qrRef = useRef<HTMLDivElement>(null);
 
   const [frameStyle, setFrameStyle] = useState<FrameOption>("none");
   const [logo, setLogo] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const [showToken, setShowToken] = useState(false);
+  const [tokenConfirmed, setTokenConfirmed] = useState(false);
   const [animateQR, setAnimateQR] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  ;
-
-  const [fgColor, setFgColor] = useState("#000000"); // ADD THIS
+  const [fgColor, setFgColor] = useState("#000000");
 
   const qrValue = state?.shortUrl || "https://zaplink.example.com/demo123";
 
@@ -170,6 +179,25 @@ export default function CustomizePage() {
     }
   };
 
+  const handleCopyToken = async () => {
+    if (!state?.deletionToken) return;
+    try {
+      await navigator.clipboard.writeText(state.deletionToken);
+      setTokenCopied(true);
+      toast.success("Deletion token copied to clipboard");
+      setTimeout(() => setTokenCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy token");
+    }
+  };
+
+  const handleDeleteSuccess = () => {
+    toast.success("Redirecting to home...");
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-7xl">
@@ -277,19 +305,22 @@ export default function CustomizePage() {
 
               {/* Foreground Color Picker */}
               <div className="space-y-4">
-                <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Label htmlFor="fg-color" className="text-base font-semibold text-foreground flex items-center gap-2">
                   <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
                   QR Foreground Color
                 </Label>
 
                 <input
+                  id="fg-color"
                   type="color"
                   value={fgColor}
                   onChange={(e) => {
                     setFgColor(e.target.value);
                     setAnimateQR(true);
                     setTimeout(() => setAnimateQR(false), 400);
-                  }} className="w-20 h-12 cursor-pointer rounded-md border border-border bg-background"
+                  }}
+                  className="w-20 h-12 cursor-pointer rounded-md border border-border bg-background"
+                  title="Choose QR code foreground color"
                 />
               </div>
 
@@ -313,6 +344,8 @@ export default function CustomizePage() {
                     className="hidden"
                     id="logo-upload"
                     accept="image/*"
+                    title="Upload logo image"
+                    aria-label="Upload logo image for QR code"
                   />
                   {logo ? (
                     <div className="flex items-center justify-center space-x-3">
@@ -412,6 +445,98 @@ export default function CustomizePage() {
                     </Button>
                   </div>
                 </div>
+
+                {/* Deletion Token Section */}
+                {state?.deletionToken && (
+                  <div className="space-y-4 pt-4 border-t border-border/50">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <h3 className="text-sm font-bold text-amber-600 dark:text-amber-500">
+                            Save Your Deletion Token
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            This token is required to delete your Zap later. Save it
+                            securely - you won't be able to retrieve it again!
+                          </p>
+
+                          {/* Token Display */}
+                          <div className="flex items-center gap-2 p-3 bg-background/50 rounded-lg border border-border">
+                            <Shield className="h-4 w-4 text-primary flex-shrink-0" />
+                            <code className="flex-1 text-xs font-mono break-all select-all">
+                              {showToken
+                                ? state.deletionToken
+                                : "•".repeat(Math.min(state.deletionToken.length, 40))}
+                            </code>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowToken(!showToken)}
+                              className="h-8 w-8 flex-shrink-0"
+                              title={showToken ? "Hide token" : "Show token"}
+                            >
+                              {showToken ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+
+                          {/* Token Actions */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCopyToken}
+                              className="h-9 rounded-lg text-xs"
+                            >
+                              {tokenCopied ? (
+                                <>
+                                  <Check className="h-3 w-3 mr-1.5" />
+                                  Copied!
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3 w-3 mr-1.5" />
+                                  Copy Token
+                                </>
+                              )}
+                            </Button>
+                            {!tokenConfirmed && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setTokenConfirmed(true);
+                                  toast.success("Token confirmed! Keep it safe.");
+                                }}
+                                className="h-9 rounded-lg text-xs"
+                              >
+                                <Check className="h-3 w-3 mr-1.5" />
+                                I've Saved It
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Delete Button */}
+                    <Button
+                      onClick={() => setDeleteModalOpen(true)}
+                      variant="destructive"
+                      className="w-full h-12 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02]"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete This Zap
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -428,6 +553,16 @@ export default function CustomizePage() {
             </Link>
           </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {state?.zapId && (
+          <DeleteZapModal
+            open={deleteModalOpen}
+            onOpenChange={setDeleteModalOpen}
+            zapId={state.zapId}
+            onDeleteSuccess={handleDeleteSuccess}
+          />
+        )}
       </main>
     </div>
   );
