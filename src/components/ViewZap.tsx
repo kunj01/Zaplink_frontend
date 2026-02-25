@@ -239,6 +239,11 @@ export default function ViewZap() {
     setVerifying(true);
     setPasswordError(null);
     try {
+      const apiUrl = import.meta.env.VITE_BACKEND_URL
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`
+        : `/api/zaps/${shortId}`;
+      const response = await axios.get(
+        apiUrl,
       // First verify the password by making a request with it
       // The backend will return 200 if correct, 401 if wrong
       const checkResponse = await axios.get(

@@ -318,9 +318,12 @@ export default function UploadPage() {
 
       try {
         setLoading(true);
+        const apiUrl = import.meta.env.VITE_BACKEND_URL
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/zaps/upload`
+          : '/api/zaps/upload';
         const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/zaps/upload`,
-          formData,
+          apiUrl,
+          formData
         );
         const { data } = response.data;
 
@@ -420,9 +423,12 @@ export default function UploadPage() {
 
       try {
         setLoading(true);
+        const apiUrl = import.meta.env.VITE_BACKEND_URL
+          ? `${import.meta.env.VITE_BACKEND_URL}/api/zaps/upload`
+          : '/api/zaps/upload';
         const response = await axios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/zaps/upload`,
-          formData,
+          apiUrl,
+          formData
         );
         const { data } = response.data;
 
@@ -517,9 +523,12 @@ export default function UploadPage() {
 
     try {
       setLoading(true);
+      const apiUrl = import.meta.env.VITE_BACKEND_URL
+        ? `${import.meta.env.VITE_BACKEND_URL}/api/zaps/upload`
+        : '/api/zaps/upload';
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/zaps/upload`,
-        formData,
+        apiUrl,
+        formData
       );
       const { data } = response.data;
 
