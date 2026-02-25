@@ -136,10 +136,11 @@ export default function ViewZap() {
         const response = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`,
         );
-        // If successful, the backend will redirect or serve the file.
-        if (response.data) {
-          window.location.href = response.data.url;
-        }
+        
+        // If metadata check passes, redirect to the API endpoint
+        // The browser will automatically follow the redirect from the backend to Cloudinary
+        window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`;
+        return;
       } catch (err) {
         const error = err as AxiosError<{
           message: string;
@@ -187,25 +188,10 @@ export default function ViewZap() {
         }
 
         if (error.response?.status === 401) {
-          // Check if it's a password required error
-          if (
-            error.response.data?.message
-              ?.toLowerCase()
-              .includes("password required")
-          ) {
-            setPasswordRequired(true);
-            setLoading(false);
-            return;
-          } else if (
-            error.response.data?.message
-              ?.toLowerCase()
-              .includes("incorrect password")
-          ) {
-            setPasswordError("Incorrect password. Please try again.");
-            setPasswordRequired(true);
-            setLoading(false);
-            return;
-          }
+          // Password required
+          setPasswordRequired(true);
+          setLoading(false);
+          return;
         } else if (error.response?.status === 410) {
           setError("This link has expired. The file is no longer available.");
           setErrorType("expired");
@@ -253,8 +239,10 @@ export default function ViewZap() {
     setVerifying(true);
     setPasswordError(null);
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}`,
+      // First verify the password by making a request with it
+      // The backend will return 200 if correct, 401 if wrong
+      const checkResponse = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/zaps/${shortId}/metadata`,
         {
           params: { password },
           headers: {
@@ -408,10 +396,6 @@ export default function ViewZap() {
         setError("View limit exceeded. This file is no longer accessible.");
         setErrorType("viewlimit");
         toast.error("View limit exceeded. This file is no longer accessible.");
-      } else if (error.response && error.response.status === 404) {
-        setError("This link does not exist or has expired.");
-        setErrorType("notfound");
-        toast.error("This link does not exist or has expired.");
       } else {
         setPasswordError(
           "An unexpected error occurred. Please try again later.",
