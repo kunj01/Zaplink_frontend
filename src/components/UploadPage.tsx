@@ -343,6 +343,8 @@ export default function UploadPage() {
         setLastQR({ ...data });
         setLastQRFormHash(formHash);
 
+        toast.success("QR Code generated successfully!"); // added toast
+
         navigate("/customize", {
           state: {
             zapId: data.zapId,
@@ -443,6 +445,8 @@ export default function UploadPage() {
         setLastQR({ ...data });
         setLastQRFormHash(formHash);
 
+        toast.success("QR Code generated successfully!"); // added toast
+
         navigate("/customize", {
           state: {
             zapId: data.zapId,
@@ -537,6 +541,8 @@ export default function UploadPage() {
       sessionStorage.setItem("lastQRFormHash", formHash);
       setLastQR({ ...data });
       setLastQRFormHash(formHash);
+
+      toast.success("QR Code generated successfully!"); // added toast
 
       navigate("/customize", {
         state: {
