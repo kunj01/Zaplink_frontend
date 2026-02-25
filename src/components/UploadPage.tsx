@@ -733,21 +733,26 @@ export default function UploadPage() {
     // check for last zap in local storage
     const lastZapStr = localStorage.getItem("lastZap");
     if (lastZapStr) {
-      const lastQR = JSON.parse(lastZapStr);
-      // Only restore if current state is empty
-      // We check the refs or assume it's mount time
-      setQrName(lastQR.name || "");
-      setPasswordProtect(!!lastQR.password);
-      setPassword(lastQR.password || "");
-      setSelfDestruct(!!lastQR.selfDestruct);
-      setDestructViews(!!lastQR.viewLimit);
-      setDestructTime(!!lastQR.expiresAt);
-      setViewsValue(lastQR.viewLimit ? String(lastQR.viewLimit) : "");
-      setTimeValue(lastQR.expiresAt ? String(lastQR.expiresAt) : "");
-      setUrlValue(lastQR.originalUrl || "");
-      setTextValue(lastQR.textContent || "");
-      setType(lastQR.type ? lastQR.type.toLowerCase() : "file");
-      // Note: File cannot be restored for security reasons
+      try {
+        const lastQR = JSON.parse(lastZapStr);
+        // Only restore if current state is empty
+        // We check the refs or assume it's mount time
+        setQrName(lastQR.name || "");
+        setPasswordProtect(!!lastQR.password);
+        setPassword(lastQR.password || "");
+        setSelfDestruct(!!lastQR.selfDestruct);
+        setDestructViews(!!lastQR.viewLimit);
+        setDestructTime(!!lastQR.expiresAt);
+        setViewsValue(lastQR.viewLimit ? String(lastQR.viewLimit) : "");
+        setTimeValue(lastQR.expiresAt ? String(lastQR.expiresAt) : "");
+        setUrlValue(lastQR.originalUrl || "");
+        setTextValue(lastQR.textContent || "");
+        setType(lastQR.type ? lastQR.type.toLowerCase() : "file");
+        // Note: File cannot be restored for security reasons
+      } catch (error) {
+        console.warn("Failed to parse lastZap from localStorage:", error);
+        localStorage.removeItem("lastZap");
+      }
     }
   }, []); // Run only once on mount to restore previous session state
 
